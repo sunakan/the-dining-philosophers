@@ -1,26 +1,52 @@
+##################################################
+# 変数(.gitignore)
+##################################################
+IGNORE_LIST    := rust,intellij+all,linux,macos,windows,vim,emacs
+GIT_IGNORE_URL := https://www.toptal.com/developers/gitignore/api/$(IGNORE_LIST)
+
+##################################################
+# 変数/マクロ(Docker)
+##################################################
+DOCKER_RUST_TAG := 1-slim-buster
+define docker-run-rust
+  docker run \
+    --rm \
+    --interactive \
+    --tty \
+    --user `id -u`:`id -g` \
+    --mount type=bind,source=$(PWD)/,target=$(PWD)/ \
+    --workdir $(PWD) \
+    rust:$(DOCKER_RUST_TAG) cargo
+endef
+CARGO_COMMAND := $(shell command -v cargo || echo $(docker-run-rust))
+
 .PHONY: gitignore
 gitignore: ## .gitignoreをDL
-	curl --output .gitignore https://www.toptal.com/developers/gitignore/api/rust,intellij+all,linux,macos,windows,vim,emacs
+	curl --output .gitignore $(GIT_IGNORE_URL)
+
+.PHONY: v
+v: ## version確認
+	@$(CARGO_COMMAND) --version
+
+.PHONY: bash
+bash: ## bash
+	@$(CARGO_COMMAND) bash
 
 .PHONY: build
 build: ## cargo build
-	cargo build
+	@$(CARGO_COMMAND) build
 
 .PHONY: run
 run: ## cargo run
-	cargo run
+	@$(CARGO_COMMAND) run
 
 .PHONY: check
 check: ## cargo check
-	cargo check
-
-.PHONY: update
-update: ## cargo update
-	cargo update
+	@$(CARGO_COMMAND) check
 
 .PHONY: doc
 doc: ## cargo doc
-	cargo doc
+	@$(CARGO_COMMAND) doc
 
 DOCKER_NGINX_TAG  := stable
 DOCKER_NGINX_HOST := nginx
@@ -34,11 +60,11 @@ doc-docker: doc ## cargo docで作ったものをnginxを通して閲覧する
 		--tty \
 		--name $(DOCKER_NGINX_HOST) \
 		--hostname $(DOCKER_NGINX_HOST) \
-		--user $(id -u):$(id -g) \
+		--user `id -u`:`id -g` \
 		--publish 80:80 \
 		--mount type=bind,source=$(PWD)/target/doc/,target=/usr/share/nginx/html/ \
 		nginx:$(DOCKER_NGINX_TAG)
-	echo Please open http://HOST/gussing_game/index.html
+	echo Please open http://HOST/XXX/index.html
 
 .PHONY: clean
 clean: ## cargo doc-dockerでたてたコンテナを片付けする
@@ -51,7 +77,7 @@ fmt: ## cargo fmt
 
 .PHONY: test
 test: ## cargo test
-	cargo test
+	@$(CARGO_COMMAND) test
 
 .PHONY: help
 help: ## Make タスク一覧
