@@ -67,9 +67,10 @@ doc-docker: doc ## cargo docで作ったものをnginxを通して閲覧する
 	echo Please open http://HOST/XXX/index.html
 
 .PHONY: clean
-clean: ## cargo doc-dockerでたてたコンテナを片付けする
+clean: ## cargo コンテナやcargo buildの片付けする
 	docker container ls --quiet --filter 'name=$(DOCKER_NGINX_HOST)' \
 	| xargs -I {container-id} docker container stop {container-id}
+	rm --recursive --force ./target
 
 .PHONY: fmt
 fmt: ## cargo fmt
